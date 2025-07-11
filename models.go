@@ -15,26 +15,24 @@ type netlifyDNSRecord struct {
 	*models.DNSRecord
 }
 
-func (r netlifyDNSRecord) libdnsRecord(zone string) libdns.Record {
-	return libdns.Record{
+func (r netlifyDNSRecord) libdnsRecord(zone string) (libdns.Record, error) {
+	return libdns.RR{
 		Type:     r.Type,
 		Name:     libdns.RelativeName(r.Hostname, zone),
-		Value:    r.Value,
+		Data:    r.Value,
 		TTL:      time.Duration(r.TTL) * time.Second,
-		ID:       r.ID,
-		Priority: uint(r.Priority),
-	}
+	}.Parse()
 }
 
 func netlifyRecord(r libdns.Record) netlifyDNSRecord {
+	rr := r.RR()
+
 	return netlifyDNSRecord{
 		&models.DNSRecord{
-			ID:       r.ID,
-			Type:     r.Type,
-			Hostname: r.Name,
-			Value:    r.Value,
-			TTL:      int64(r.TTL.Seconds()),
-			Priority: int64(r.Priority),
+			Type:     rr.Type,
+			Hostname: rr.Name,
+			Value:    rr.Data,
+			TTL:      int64(rr.TTL.Seconds()),
 		},
 	}
 }

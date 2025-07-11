@@ -82,11 +82,13 @@ func (p *Provider) updateRecord(ctx context.Context, oldRec netlifyDNSRecord, ne
 // getDNSRecords gets all record in a zone. It returns an array of the records
 // in the zone. It may return an empty slice and a nil error.
 func (p *Provider) getDNSRecords(ctx context.Context, zoneInfo netlifyZone, rec libdns.Record, matchContent bool) ([]netlifyDNSRecord, error) {
+	rr := rec.RR()
+
 	qs := make(url.Values)
-	qs.Set("type", rec.Type)
-	qs.Set("name", libdns.AbsoluteName(rec.Name, zoneInfo.Name))
+	qs.Set("type", rr.Type)
+	qs.Set("name", libdns.AbsoluteName(rr.Name, zoneInfo.Name))
 	if matchContent {
-		qs.Set("content", rec.Value)
+		qs.Set("content", rr.Data)
 	}
 
 	reqURL := fmt.Sprintf("%s/dns_zones/%s/dns_records", baseURL, zoneInfo.ID)
@@ -99,7 +101,7 @@ func (p *Provider) getDNSRecords(ctx context.Context, zoneInfo netlifyZone, rec 
 	err = p.doAPIRequest(req, false, false, true, false, &results)
 	var rest_to_return []netlifyDNSRecord
 	for _, res := range results {
-		if res.Hostname == libdns.AbsoluteName(rec.Name, zoneInfo.Name) && res.Type == rec.Type {
+		if res.Hostname == libdns.AbsoluteName(rr.Name, zoneInfo.Name) && res.Type == rr.Type {
 			rest_to_return = append(rest_to_return, res)
 		}
 	}
